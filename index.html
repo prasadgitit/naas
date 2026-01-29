@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="auto">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>🐱 NaaS </title>
+
+  <!-- Favicon: inline SVG (cat) -->
+  <link rel="icon" href='data:image/svg+xml;utf8,
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+      <rect width="64" height="64" fill="%230f172a"/>
+      <circle cx="32" cy="36" r="20" fill="%23f6b26b"/>
+      <circle cx="24" cy="34" r="3" fill="%23000"/>
+      <circle cx="40" cy="34" r="3" fill="%23000"/>
+      <path d="M30 40 L34 40 L32 42 Z" fill="%23e38f66"/>
+      <path d="M28 44 Q32 46 36 44" stroke="%23000" stroke-width="2" fill="none" stroke-linecap="round"/>
+    </svg>' />
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Your app logic (fetch/parse reason/copy/toast) -->
+  <script defer src="app.js"></script>
+
+  <!-- Theme bootstrap & toggle -->
+  <script>
+    (function () {
+      const THEME_KEY = 'site-theme'; // 'light' | 'dark' | 'auto'
+      const root = document.documentElement;
+      const mediaDark = window.matchMedia('(prefers-color-scheme: dark)');
+
+      function systemPrefersDark() { return !!(mediaDark && mediaDark.matches); }
+      function effectiveTheme(mode) { return (mode === 'light' || mode === 'dark') ? mode : (systemPrefersDark() ? 'dark' : 'light'); }
+
+      function applyTheme(mode) {
+        const valid = (mode === 'light' || mode === 'dark' || mode === 'auto') ? mode : 'auto';
+        root.setAttribute('data-theme', valid);
+        const eff = effectiveTheme(valid);
+        root.setAttribute('data-effective-theme', eff);
+
+        const btn = document.getElementById('themeToggleBtn');
+        if (btn) {
+          btn.dataset.mode = valid;
+          btn.dataset.effective = eff;
+          const label =
+            valid === 'light' ? 'Switch to Dark' :
+            valid === 'dark'  ? 'Use System (Auto)' :
+                                'Switch to Light';
+          btn.setAttribute('aria-label', label);
+          btn.title = label;
+        }
+      }
+
+      const saved = localStorage.getItem(THEME_KEY) || 'auto';
+      applyTheme(saved);
+
+      window.__toggleTheme = function () {
+        const current = root.getAttribute('data-theme') || 'auto';
+        const next = current === 'auto' ? 'light' : current === 'light' ? 'dark' : 'auto';
+        localStorage.setItem(THEME_KEY, next);
+        applyTheme(next);
+      };
+
+      if (mediaDark && typeof mediaDark.addEventListener === 'function') {
+        mediaDark.addEventListener('change', () => {
+          const mode = root.getAttribute('data-theme') || 'auto';
+          if (mode === 'auto') applyTheme('auto');
+        });
+      } else if (mediaDark && typeof mediaDark.addListener === 'function') {
+        mediaDark.addListener(() => {
+          const mode = root.getAttribute('data-theme') || 'auto';
+          if (mode === 'auto') applyTheme('auto');
+        });
+      }
+    })();
+  </script>
+</head>
+<body>
+  <!-- Floating theme toggle (top-right) -->
+  <button id="themeToggleBtn" class="theme-toggle" data-mode="auto" data-effective="light"
+          aria-label="Switch theme" title="Switch theme"
+          onclick="window.__toggleTheme()">
+    <span class="theme-icon sun" aria-hidden="true">☀️</span>
+    <span class="theme-icon moon" aria-hidden="true">🌙</span>
+    <span class="theme-icon auto" aria-hidden="true">🖥️</span>
+  </button>
+
+  <main class="container">
+    <!-- Small hero image above the H1 (scaled down, never cropped) -->
+    <div class="hero">
+      <img src="image.png" alt="Cat meme" class="hero-image" />
+    </div>
+
+    <h1>NaaS - No As A Service </h1>
+
+    <div class="panel">
+      <div class="controls">
+        <button id="generateBtn" class="btn" aria-label="Generate message">
+          <span class="btn-content">
+            <span class="spinner" aria-hidden="true"></span>
+            <span class="btn-label">Generate Message</span>
+          </span>
+        </button>
+
+        <button id="copyBtn" class="btn secondary" title="Copy to clipboard" disabled aria-disabled="true">
+          <span class="copy-icon" aria-hidden="true">📋</span>
+          <span class="copy-label">Copy</span>
+        </button>
+      </div>
+
+      <div id="result" class="result" aria-live="polite">
+        Click the button to get a message.
+      </div>
+    </div>
+
+    <footer class="footnote">
+      <small>
+        Powered by <a href="https://naas.isalman.dev/no" target="_blank" rel="noopener">naas.isalman.dev/no</a>
+      </small>
+    </footer>
+  </main>
+
+  <!-- Toast container (bottom-center) -->
+  <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+</body>
+</html>

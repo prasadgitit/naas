@@ -1,0 +1,278 @@
+/* =========================================================
+   THEME SYSTEM (auto / light / dark via data-theme attribute)
+   ========================================================= */
+:root {
+  --bg: #0f172a;
+  --card: #111827;
+  --accent: #22c55e;
+  --text: #e5e7eb;
+  --muted: #9ca3af;
+  --surface: #0b1220;
+  --border: rgba(255,255,255,0.08);
+  --shadow: 0 10px 30px rgba(0,0,0,0.35);
+
+  --toast-success-bg: rgba(16, 185, 129, 0.12);
+  --toast-success-border: rgba(16, 185, 129, 0.35);
+  --toast-success-text: #d1fae5;
+  --toast-error-bg: rgba(239, 68, 68, 0.12);
+  --toast-error-border: rgba(239, 68, 68, 0.35);
+  --toast-error-text: #fee2e2;
+  --toast-info-bg: rgba(59, 130, 246, 0.12);
+  --toast-info-border: rgba(59, 130, 246, 0.35);
+  --toast-info-text: #dbeafe;
+
+  --btn-secondary-bg: #243043;
+  --btn-secondary-hover: #2b3a52;
+
+  --result-loading-a: rgba(255,255,255,0.06);
+  --result-loading-b: rgba(255,255,255,0.16);
+}
+
+/* Light theme overrides */
+:root[data-theme="light"] {
+  --bg: #f7fafc;
+  --card: #ffffff;
+  --accent: #16a34a;
+  --text: #0f172a;
+  --muted: #475569;
+  --surface: #f1f5f9;
+  --border: rgba(0,0,0,0.08);
+  --shadow: 0 8px 24px rgba(0,0,0,0.1);
+
+  --btn-secondary-bg: #e2e8f0;
+  --btn-secondary-hover: #dbe2eb;
+
+  --result-loading-a: rgba(0,0,0,0.05);
+  --result-loading-b: rgba(0,0,0,0.12);
+
+  --toast-success-bg: rgba(16, 185, 129, 0.12);
+  --toast-success-border: rgba(16, 185, 129, 0.35);
+  --toast-success-text: #065f46;
+  --toast-error-bg: rgba(239, 68, 68, 0.12);
+  --toast-error-border: rgba(239, 68, 68, 0.35);
+  --toast-error-text: #7f1d1d;
+  --toast-info-bg: rgba(37, 99, 235, 0.12);
+  --toast-info-border: rgba(37, 99, 235, 0.35);
+  --toast-info-text: #1e3a8a;
+}
+
+/* Dark theme overrides: keep defaults from :root */
+:root[data-theme="dark"] {}
+
+/* Auto -> system preference when data-theme="auto" */
+@media (prefers-color-scheme: light) {
+  :root[data-theme="auto"] {
+    --bg: #f7fafc;
+    --card: #ffffff;
+    --accent: #16a34a;
+    --text: #0f172a;
+    --muted: #475569;
+    --surface: #f1f5f9;
+    --border: rgba(0,0,0,0.08);
+    --shadow: 0 8px 24px rgba(0,0,0,0.1);
+
+    --btn-secondary-bg: #e2e8f0;
+    --btn-secondary-hover: #dbe2eb;
+
+    --result-loading-a: rgba(0,0,0,0.05);
+    --result-loading-b: rgba(0,0,0,0.12);
+
+    --toast-success-bg: rgba(16, 185, 129, 0.12);
+    --toast-success-border: rgba(16, 185, 129, 0.35);
+    --toast-success-text: #065f46;
+    --toast-error-bg: rgba(239, 68, 68, 0.12);
+    --toast-error-border: rgba(239, 68, 68, 0.35);
+    --toast-error-text: #7f1d1d;
+    --toast-info-bg: rgba(37, 99, 235, 0.12);
+    --toast-info-border: rgba(37, 99, 235, 0.35);
+    --toast-info-text: #1e3a8a;
+  }
+}
+
+/* ==========================
+   Base Layout & Typography
+   ========================== */
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  background:
+    radial-gradient(1000px 600px at 20% 10%, color-mix(in oklab, var(--bg) 85%, #1f2937 15%) 0, var(--bg) 45%);
+  color: var(--text);
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+}
+
+.container { width: min(720px, 92vw); padding: 2rem; }
+
+h1 {
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  margin: 0.4rem 0 1rem; /* slight top space for balance with hero */
+}
+
+/* ===== Hero image (above H1) – scaled down, no cropping ===== */
+.hero {
+  display: grid;
+  place-items: center;
+  margin-bottom: 0.9rem;
+}
+
+/* IMPORTANT: Do not crop. Keep intrinsic aspect ratio.
+   Constrain size via max-width (and optional max-height) only. */
+.hero-image {
+  display: block;
+  width: 100%;           /* fill the available width in its container */
+  max-width: 260px;      /* cap the width so it stays small */
+  height: auto;          /* preserve aspect ratio (no cropping) */
+  /* OPTIONAL: if you also want to cap height, keep contain to avoid crop:
+     max-height: 220px;
+     object-fit: contain;
+  */
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+/* Panel */
+.panel {
+  background: linear-gradient(180deg, color-mix(in oklab, var(--card) 96%, #ffffff 4%), var(--card));
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.25rem;
+  box-shadow: var(--shadow);
+}
+
+.controls { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+
+/* ==========================
+   Buttons
+   ========================== */
+.btn {
+  appearance: none;
+  border: 0;
+  border-radius: 10px;
+  background: linear-gradient(90deg, color-mix(in oklab, var(--accent) 92%, #16a34a 8%), var(--accent));
+  color: white;
+  font-weight: 600;
+  padding: 0.75rem 1.1rem;
+  cursor: pointer;
+  transition: transform .08s ease, filter .2s ease, background .2s ease, opacity .2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.btn:hover { filter: brightness(1.08); }
+.btn:active { transform: translateY(1px) scale(0.99); }
+.btn:disabled { cursor: not-allowed; filter: grayscale(0.2) brightness(0.9); opacity: 0.8; }
+
+.btn.secondary {
+  background: var(--btn-secondary-bg);
+  color: color-mix(in oklab, var(--text) 82%, #ffffff 18%);
+  border: 1px solid var(--border);
+}
+.btn.secondary:hover { filter: none; background: var(--btn-secondary-hover); }
+
+/* Spinner inside primary button */
+.spinner {
+  --size: 16px;
+  width: var(--size); height: var(--size);
+  border: 2px solid color-mix(in oklab, #ffffff 35%, transparent);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  display: none;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.btn.loading .spinner { display: inline-block; }
+.btn.loading .btn-label { opacity: 0.85; }
+
+/* ==========================
+   Result Area
+   ========================== */
+.result {
+  margin-top: 1rem;
+  min-height: 3.25rem;
+  padding: 1rem 1.1rem;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid color-mix(in oklab, var(--border) 90%, transparent);
+  font-size: 1.05rem;
+  color: var(--text);
+  word-break: break-word;
+  position: relative;
+}
+
+/* Shimmer loading state */
+.result.loading { color: transparent; }
+.result.loading::before {
+  content: "";
+  position: absolute; inset: 0; border-radius: 10px;
+  background: linear-gradient(
+    110deg,
+    var(--result-loading-a) 8%,
+    var(--result-loading-b) 18%,
+    var(--result-loading-a) 33%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.2s linear infinite;
+}
+@keyframes shimmer { to { background-position: -200% 0; } }
+
+.copy-success {
+  background: linear-gradient(90deg, var(--accent), color-mix(in oklab, var(--accent) 70%, #58d27e 30%));
+  border: 1px solid rgba(0,0,0,0.06) !important;
+  color: #052e16 !important;
+}
+
+/* ==========================
+   Toast (bottom-center)
+   ========================== */
+.toast {
+  position: fixed; left: 50%; bottom: 24px;
+  transform: translateX(-50%) translateY(20px);
+  min-width: 220px; max-width: min(92vw, 560px);
+  padding: 0.85rem 1rem; border-radius: 12px;
+  background: var(--toast-success-bg);
+  color: var(--toast-success-text);
+  border: 1px solid var(--toast-success-border);
+  backdrop-filter: blur(6px);
+  box-shadow: var(--shadow);
+  font-size: 0.98rem; line-height: 1.25rem; text-align: center;
+  opacity: 0; pointer-events: none; z-index: 9999;
+  transition: transform .25s ease, opacity .25s ease;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.success { background: var(--toast-success-bg); border-color: var(--toast-success-border); color: var(--toast-success-text); }
+.toast.error   { background: var(--toast-error-bg);   border-color: var(--toast-error-border);   color: var(--toast-error-text); }
+.toast.info    { background: var(--toast-info-bg);    border-color: var(--toast-info-border);    color: var(--toast-info-text); }
+
+/* ==========================
+   Theme Toggle Button (top-right)
+   ========================== */
+.theme-toggle {
+  position: fixed; top: 14px; right: 14px; z-index: 1000;
+  border: 1px solid var(--border);
+  background: var(--card); color: var(--text);
+  border-radius: 999px; padding: 0.45rem 0.6rem;
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  cursor: pointer; box-shadow: var(--shadow);
+  transition: transform .08s ease, filter .2s ease, background .2s ease, color .2s ease, opacity .2s ease;
+}
+.theme-toggle:hover { filter: brightness(1.05); }
+.theme-toggle:active { transform: translateY(1px) scale(0.98); }
+.theme-toggle .theme-icon { display: none; }
+
+/* Show icon based on chosen mode */
+.theme-toggle[data-mode="light"] .sun { display: inline; }
+.theme-toggle[data-mode="dark"]  .moon { display: inline; }
+.theme-toggle[data-mode="auto"]  .auto { display: inline; }
+
+/* ==========================
+   Footer
+   ========================== */
+.footnote { color: var(--muted); margin-top: 1rem; }
+.footnote a { color: var(--accent); text-decoration: none; }
+.footnote a:hover { text-decoration: underline; }
