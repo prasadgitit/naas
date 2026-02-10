@@ -3,56 +3,55 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>🐱 NaaS </title>
+  <title>🐱 NaaS / LaaS</title>
 
-   <!-- Explicit blank favicon to override caches/fallbacks -->
+  <!-- Explicit blank favicon to override caches/fallbacks -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'/>">
+
+  <!-- Add: reduce referrer leakage that can sometimes upset strict backends -->
+  <meta http-equiv="referrer" content="no-referrer">
 
   <!-- Styles -->
   <link rel="stylesheet" href="styles.css" />
 
-  <!-- Your app logic (fetch/parse reason/copy/toast) -->
+  <!-- ✅ Preload LaaS hero image to prevent flicker on toggle -->
+  <link rel="preload" as="image" href="laas.jpg" imagesrcset="laas.jpg" />
+
+  <!-- Your app logic (NaaS + LaaS) -->
   <script defer src="app.js"></script>
 
-  <!-- Theme bootstrap & toggle -->
+  <!-- Theme bootstrap & toggle (unchanged) -->
   <script>
     (function () {
-      const THEME_KEY = 'site-theme'; // 'light' | 'dark' | 'auto'
+      const THEME_KEY = 'site-theme';
       const root = document.documentElement;
       const mediaDark = window.matchMedia('(prefers-color-scheme: dark)');
-
       function systemPrefersDark() { return !!(mediaDark && mediaDark.matches); }
       function effectiveTheme(mode) { return (mode === 'light' || mode === 'dark') ? mode : (systemPrefersDark() ? 'dark' : 'light'); }
-
       function applyTheme(mode) {
         const valid = (mode === 'light' || mode === 'dark' || mode === 'auto') ? mode : 'auto';
         root.setAttribute('data-theme', valid);
         const eff = effectiveTheme(valid);
         root.setAttribute('data-effective-theme', eff);
-
         const btn = document.getElementById('themeToggleBtn');
         if (btn) {
           btn.dataset.mode = valid;
           btn.dataset.effective = eff;
-          const label =
-            valid === 'light' ? 'Switch to Dark' :
-            valid === 'dark'  ? 'Use System (Auto)' :
-                                'Switch to Light';
+          const label = valid === 'light' ? 'Switch to Dark'
+            : valid === 'dark' ? 'Use System (Auto)'
+            : 'Switch to Light';
           btn.setAttribute('aria-label', label);
           btn.title = label;
         }
       }
-
       const saved = localStorage.getItem(THEME_KEY) || 'auto';
       applyTheme(saved);
-
       window.__toggleTheme = function () {
         const current = root.getAttribute('data-theme') || 'auto';
         const next = current === 'auto' ? 'light' : current === 'light' ? 'dark' : 'auto';
         localStorage.setItem(THEME_KEY, next);
         applyTheme(next);
       };
-
       if (mediaDark && typeof mediaDark.addEventListener === 'function') {
         mediaDark.addEventListener('change', () => {
           const mode = root.getAttribute('data-theme') || 'auto';
@@ -70,51 +69,94 @@
 <body>
   <!-- Floating theme toggle (top-right) -->
   <button id="themeToggleBtn" class="theme-toggle" data-mode="auto" data-effective="light"
-          aria-label="Switch theme" title="Switch theme"
-          onclick="window.__toggleTheme()">
+    aria-label="Switch theme" title="Switch theme" onclick="window.__toggleTheme()">
     <span class="theme-icon sun" aria-hidden="true">☀️</span>
     <span class="theme-icon moon" aria-hidden="true">🌙</span>
     <span class="theme-icon auto" aria-hidden="true">🖥️</span>
   </button>
 
   <main class="container">
-    <!-- Small hero image above the H1 (scaled down, never cropped) -->
+    <!-- ✅ Hero image (we will swap src/alt via JS) -->
     <div class="hero">
-      <img src="image.png" alt="Cat meme" class="hero-image" />
+      <img id="heroImage" src="image.png" alt="Cat meme" class="hero-image" />
     </div>
 
-    <h1>NaaS - No As A Service </h1>
+    <!-- Title toggles based on section -->
+    <h1 id="mainTitle">NaaS - No As A Service</h1>
 
-    <div class="panel">
-      <div class="controls">
-        <button id="generateBtn" class="btn" aria-label="Generate message">
-          <span class="btn-content">
-            <span class="spinner" aria-hidden="true"></span>
-            <span class="btn-label">Click to get a reason!</span>
-          </span>
-        </button>
-
-        <button id="copyBtn" class="btn secondary" title="Copy to clipboard" disabled aria-disabled="true">
-          <span class="copy-icon" aria-hidden="true">📋</span>
-          <span class="copy-label">Copy</span>
-        </button>
+    <!-- ===== NaaS Section ===== -->
+    <div id="naasSection">
+      <div class="panel" id="naasPanel">
+        <div class="controls">
+          <button id="generateBtn" class="btn" aria-label="Generate message">
+            <span class="btn-content">
+              <span class="spinner" aria-hidden="true"></span>
+              <span class="btn-label">Generate Message</span>
+            </span>
+          </button>
+          <button id="copyBtn" class="btn secondary" title="Copy to clipboard" disabled aria-disabled="true">
+            <span class="copy-icon" aria-hidden="true">📋</span>
+            <span class="copy-label">Copy</span>
+          </button>
+          <!-- Switch to LaaS -->
+          <button id="openLaaSBtn" class="btn secondary" title="Switch to LaaS">
+            <span class="copy-icon" aria-hidden="true">🧪</span>
+            <span class="copy-label">LaaS</span>
+          </button>
+        </div>
+        <div id="result" class="result" aria-live="polite">
+          Click the button to get a message.
+        </div>
       </div>
-
-      <div id="result" class="result" aria-live="polite">
-        Click the button to get a message.
-      </div>
+      <!-- NaaS footer -->
+      <footer class="footnote" id="naasFooter">
+        <small>Powered by <a href="https://naas.isalman.dev/no" target="_blank" rel="noopener">naas.isalman.dev/no</a></small>
+      </footer>
     </div>
 
-    <footer class="footnote">
-      <small>
-        Powered by <a href="https://naas.isalman.dev/no" target="_blank" rel="noopener">naas.isalman.dev/no</a>
-      </small>
-    </footer>
+    <!-- ===== LaaS Section (hidden by default) ===== -->
+    <section id="laasSection" hidden>
+      <h2 class="visually-hidden">LaaS - Lies As A Service</h2>
+      <div class="panel">
+        <div class="controls">
+          <label for="laasCategory" class="visually-hidden">Category</label>
+          <select id="laasCategory" class="select" aria-label="Select a category">
+            <option value="sick">sick</option>
+            <option value="meeting">meeting</option>
+            <option value="deadline">deadline</option>
+            <option value="remote">remote</option>
+            <option value="technical">technical</option>
+            <option value="manager">manager</option>
+            <option value="tech">tech</option>
+            <option value="random">random</option>
+          </select>
+          <button id="laasGenerateBtn" class="btn" aria-label="Click to get a reason">
+            <span class="btn-content">
+              <span class="spinner" aria-hidden="true"></span>
+              <span class="btn-label">Click to get a reason</span>
+            </span>
+          </button>
+          <button id="laasCopyBtn" class="btn secondary" title="Copy to clipboard" disabled aria-disabled="true">
+            <span class="copy-icon" aria-hidden="true">📋</span>
+            <span class="copy-label">Copy</span>
+          </button>
+          <button id="backToNaaSBtn" class="btn secondary" title="Back to NaaS">
+            <span class="copy-icon" aria-hidden="true">↩️</span>
+            <span class="copy-label">Move back to NaaS</span>
+          </button>
+        </div>
+        <div id="laasResult" class="result" aria-live="polite">
+          Choose a category and click to get a reason.
+        </div>
+      </div>
+      <!-- LaaS footer -->
+      <footer class="footnote" id="laasFooter">
+        <small>Powered by <a href="https://lies-as-a-service.onrender.com/lie" target="_blank" rel="noopener">lies-as-a-service.onrender.com/lie</a></small>
+      </footer>
+    </section>
   </main>
 
-  <!-- Toast container (bottom-center) -->
+  <!-- Toast container -->
   <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 </body>
-
 </html>
-
