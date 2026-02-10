@@ -281,3 +281,46 @@ laasCopyBtn?.addEventListener('click', laasCopyToClipboard);
     heroImage.alt = NAAS_IMG_ALT;
   }
 })();
+
+
+/* ========= Deep-linking (load LaaS via URL) ========= */
+// Accept: ?view=laas (optionally &cat=...) OR #laas (optionally #laas:<category>)
+(function initDeepLink() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const view = (params.get('view') || '').toLowerCase();
+
+    // Check hash pattern: #laas or #laas:category
+    const hash = (window.location.hash || '').replace(/^#/, '');
+    let hashView = '';
+    let hashCategory = '';
+    if (hash) {
+      const [hView, hCat] = hash.split(':');
+      hashView = (hView || '').toLowerCase();
+      hashCategory = (hCat || '').trim();
+    }
+
+    // Determine desired view
+    const wantsLaaS = (view === 'laas') || (hashView === 'laas');
+
+    // Optional category from search param or hash
+    const catFromQuery = (params.get('cat') || '').trim();
+    const cat = (hashCategory || catFromQuery || '').toLowerCase();
+
+    if (wantsLaaS) {
+      // Preselect category if valid
+      if (cat && document.getElementById('laasCategory')) {
+        const select = document.getElementById('laasCategory');
+        // Only set if the option exists; otherwise ignore
+        const exists = Array.from(select.options).some(o => o.value === cat);
+        if (exists) select.value = cat;
+      }
+      // Show LaaS instantly (no animation)
+      if (typeof showLaaS === 'function') showLaaS();
+    }
+  } catch (e) {
+    console.warn('Deep-link init failed:', e);
+  }
+})();
+
+
