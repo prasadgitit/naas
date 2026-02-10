@@ -1,3 +1,6 @@
+/* =========================
+   NaaS (with CORS-resilient fetch)
+   ========================= */
 const btn = document.getElementById('generateBtn');
 const copyBtn = document.getElementById('copyBtn');
 const result = document.getElementById('result');
@@ -25,32 +28,75 @@ function setResultText(text) {
   }
 }
 
+// ---- Fetch helpers (origin first, then CORS-safe fallback) ----
+function withTimeout(promise, ms, controller) {
+  let t;
+  const timeout = new Promise((_, rej) => {
+    t = setTimeout(() => {
+      try { controller?.abort?.(); } catch {}
+      rej(new Error(`Timeout after ${ms}ms`));
+    }, ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(t));
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function fetchWithCorsFallback(url, { timeoutMs = 7000 } = {}) {
+  const opts = { method: 'GET', mode: 'cors', cache: 'no-store', credentials: 'omit', redirect: 'follow' };
+
+  const attempt = async (u) => {
+    const ac = new AbortController();
+    const p = fetch(u, { ...opts, signal: ac.signal });
+    return withTimeout(p, timeoutMs, ac);
+  };
+
+  try {
+    return await attempt(url);
+  } catch (e1) {
+    // Retry via a read-only CORS-friendly proxy
+    await sleep(200);
+    const proxied = `https://r.jina.ai/http/${url.replace(/^https?:\/\//, '')}`;
+    try {
+      return await attempt(proxied);
+    } catch (e2) {
+      const err = new Error(`Origin & fallback failed: ${e1?.message || e1} | ${e2?.message || e2}`);
+      err.originError = e1;
+      err.fallbackError = e2;
+      throw err;
+    }
+  }
+}
+
+function classifyFetchError(err, res) {
+  if (res && !res.ok) return { kind: 'http', detail: `HTTP ${res.status}` };
+  if (err?.name === 'AbortError' || /Timeout/i.test(err?.message || '')) return { kind: 'timeout', detail: 'Request timed out' };
+  if (err && err.message && /TypeError/i.test(err.message)) return { kind: 'cors', detail: 'Blocked by CORS (browser)' };
+  return { kind: 'network', detail: err?.message || 'Network error' };
+}
+
 async function getMessage() {
   setLoading(true);
   try {
-    const res = await fetch('https://naas.isalman.dev/no', { method: 'GET' });
+    const url = 'https://naas.isalman.dev/no';
+    const res = await fetchWithCorsFallback(url, { timeoutMs: 7000 });
 
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) {
+      const { detail } = classifyFetchError(null, res);
+      throw new Error(detail);
+    }
 
-    // Try JSON first. If it fails, fall back to text.
     let messageText = '';
     const contentType = res.headers.get('content-type') || '';
 
     if (contentType.includes('application/json')) {
       const data = await res.json();
-      // Show only the value of "reason" (without the key)
-      messageText = (data && typeof data.reason === 'string')
-        ? data.reason
-        : JSON.stringify(data);
+      messageText = (data && typeof data.reason === 'string') ? data.reason : JSON.stringify(data);
     } else {
-      // Fallback for plain text
       const text = await res.text();
-      // If the server returned text that looks like JSON, try to parse it
       try {
         const parsed = JSON.parse(text);
-        messageText = (parsed && typeof parsed.reason === 'string')
-          ? parsed.reason
-          : text;
+        messageText = (parsed && typeof parsed.reason === 'string') ? parsed.reason : text;
       } catch {
         messageText = text;
       }
@@ -59,7 +105,8 @@ async function getMessage() {
     setResultText(messageText?.trim() || 'No message returned.');
   } catch (err) {
     console.error(err);
-    setResultText('Failed to fetch message. (Possible CORS or network error)');
+    const { detail } = classifyFetchError(err);
+    setResultText(`Failed to fetch message. ${detail}. Please try again.`);
   } finally {
     setLoading(false);
   }
@@ -68,10 +115,8 @@ async function getMessage() {
 async function copyToClipboard() {
   const text = result.textContent || '';
   if (!text.trim()) return;
-
   try {
     await navigator.clipboard.writeText(text);
-    // visual feedback
     const originalLabel = copyBtn.querySelector('.copy-label').textContent;
     copyBtn.classList.add('copy-success');
     copyBtn.querySelector('.copy-label').textContent = 'Copied!';
@@ -83,19 +128,156 @@ async function copyToClipboard() {
     }, 1200);
   } catch (e) {
     console.error('Clipboard write failed:', e);
-    // Fallback: create a temporary textarea
     const ta = document.createElement('textarea');
     ta.value = text;
     document.body.appendChild(ta);
     ta.select();
-    try {
-      document.execCommand('copy');
-      alert('Copied to clipboard.');
-    } finally {
-      document.body.removeChild(ta);
-    }
+    try { document.execCommand('copy'); alert('Copied to clipboard.'); }
+    finally { document.body.removeChild(ta); }
   }
 }
 
 btn.addEventListener('click', getMessage);
 copyBtn.addEventListener('click', copyToClipboard);
+
+/* =========================
+   LaaS (mirrors the same CORS hardening)
+   ========================= */
+const mainTitle = document.getElementById('mainTitle');
+const openLaaSBtn = document.getElementById('openLaaSBtn');
+const backToNaaSBtn = document.getElementById('backToNaaSBtn');
+const naasSection = document.getElementById('naasSection');
+const laasSection = document.getElementById('laasSection');
+const naasFooter = document.getElementById('naasFooter');
+const laasFooter = document.getElementById('laasFooter');
+const laasGenerateBtn = document.getElementById('laasGenerateBtn');
+const laasCopyBtn = document.getElementById('laasCopyBtn');
+const laasResult = document.getElementById('laasResult');
+const laasCategory = document.getElementById('laasCategory');
+
+// (Optional) hero swap if you implemented it
+const heroImage = document.getElementById('heroImage');
+const NAAS_IMG_SRC = 'image.png';
+const NAAS_IMG_ALT = 'Cat meme';
+const LAAS_IMG_SRC = 'laas.jpg';
+const LAAS_IMG_ALT = 'Lies As A Service hero';
+
+function setTitleToNaaS() { if (mainTitle) mainTitle.textContent = 'NaaS - No As A Service'; }
+function setTitleToLaaS() { if (mainTitle) mainTitle.textContent = 'LaaS - Lies As A Service'; }
+
+function showLaaS() {
+  if (naasSection) naasSection.hidden = true;
+  if (laasSection) laasSection.hidden = false;
+  if (naasFooter) naasFooter.style.display = 'none';
+  if (laasFooter) laasFooter.style.display = '';
+  setTitleToLaaS();
+  if (heroImage) { heroImage.src = LAAS_IMG_SRC; heroImage.alt = LAAS_IMG_ALT; }
+  if (laasResult) laasResult.textContent = 'Choose a category and click to get a reason.';
+  if (laasCopyBtn) laasCopyBtn.setAttribute('disabled', 'true');
+}
+
+function showNaaS() {
+  if (laasSection) laasSection.hidden = true;
+  if (naasSection) naasSection.hidden = false;
+  if (laasFooter) laasFooter.style.display = 'none';
+  if (naasFooter) naasFooter.style.display = '';
+  setTitleToNaaS();
+  if (heroImage) { heroImage.src = NAAS_IMG_SRC; heroImage.alt = NAAS_IMG_ALT; }
+}
+
+openLaaSBtn?.addEventListener('click', showLaaS);
+backToNaaSBtn?.addEventListener('click', showNaaS);
+
+function laasSetLoading(isLoading) {
+  if (!laasGenerateBtn || !laasResult || !laasCopyBtn) return;
+  if (isLoading) {
+    laasGenerateBtn.classList.add('loading');
+    laasGenerateBtn.setAttribute('disabled', 'true');
+    laasResult.classList.add('loading');
+    laasResult.textContent = 'Fetching…';
+    laasCopyBtn.setAttribute('disabled', 'true');
+  } else {
+    laasGenerateBtn.classList.remove('loading');
+    laasGenerateBtn.removeAttribute('disabled');
+    laasResult.classList.remove('loading');
+  }
+}
+
+function laasSetResultText(text) {
+  if (!laasResult || !laasCopyBtn) return;
+  laasResult.textContent = text;
+  if (text && text.trim().length > 0) laasCopyBtn.removeAttribute('disabled');
+  else laasCopyBtn.setAttribute('disabled', 'true');
+}
+
+async function getLaaSMessage() {
+  laasSetLoading(true);
+  try {
+    const cat = (laasCategory?.value || 'random').trim();
+    const url = `https://lies-as-a-service.onrender.com/lie?category=${encodeURIComponent(cat)}`;
+    const res = await fetchWithCorsFallback(url, { timeoutMs: 7000 });
+
+    if (!res.ok) {
+      const { detail } = classifyFetchError(null, res);
+      throw new Error(detail);
+    }
+
+    const contentType = res.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      const data = await res.json();
+      const text =
+        (typeof data?.lie === 'string' && data.lie) ||
+        (typeof data?.reason === 'string' && data.reason) ||
+        (typeof data?.message === 'string' && data.message) ||
+        JSON.stringify(data);
+      laasSetResultText((text || '').trim() || 'No message returned.');
+    } else {
+      const text = (await res.text()) || '';
+      laasSetResultText(text.trim() || 'No message returned.');
+    }
+  } catch (err) {
+    console.error(err);
+    const { detail } = classifyFetchError(err);
+    laasSetResultText(`Failed to fetch message. ${detail}. Please try again.`);
+  } finally {
+    laasSetLoading(false);
+  }
+}
+
+async function laasCopyToClipboard() {
+  const text = laasResult?.textContent || '';
+  if (!text.trim()) return;
+  try {
+    await navigator.clipboard.writeText(text);
+    const originalLabel = laasCopyBtn.querySelector('.copy-label').textContent;
+    laasCopyBtn.classList.add('copy-success');
+    laasCopyBtn.querySelector('.copy-label').textContent = 'Copied!';
+    laasCopyBtn.setAttribute('disabled', 'true');
+    setTimeout(() => {
+      laasCopyBtn.classList.remove('copy-success');
+      laasCopyBtn.querySelector('.copy-label').textContent = originalLabel;
+      laasCopyBtn.removeAttribute('disabled');
+    }, 1200);
+  } catch (e) {
+    console.error('Clipboard write failed:', e);
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); alert('Copied to clipboard.'); }
+    finally { document.body.removeChild(ta); }
+  }
+}
+
+laasGenerateBtn?.addEventListener('click', getLaaSMessage);
+laasCopyBtn?.addEventListener('click', laasCopyToClipboard);
+
+// Initial state
+(function initUI() {
+  if (naasFooter) naasFooter.style.display = '';
+  if (laasFooter) laasFooter.style.display = 'none';
+  if (heroImage) {
+    heroImage.src = NAAS_IMG_SRC;
+    heroImage.alt = NAAS_IMG_ALT;
+  }
+})();
