@@ -40,7 +40,6 @@ function withTimeout(promise, ms, controller) {
   return Promise.race([promise, timeout]).finally(() => clearTimeout(t));
 }
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-
 async function fetchWithCorsFallback(url, { timeoutMs = 7000 } = {}) {
   const opts = { method: 'GET', mode: 'cors', cache: 'no-store', credentials: 'omit', redirect: 'follow' };
   const attempt = async (u) => {
@@ -53,7 +52,8 @@ async function fetchWithCorsFallback(url, { timeoutMs = 7000 } = {}) {
   } catch (e1) {
     // Retry via a read-only CORS-friendly proxy
     await sleep(200);
-    const proxied = `https://r.jina.ai/http/${url.replace(/^https?:\/\//, '')}`;
+    // IMPORTANT: keep the full URL (with scheme)
+    const proxied = `https://r.jina.ai/http/${url}`;
     try {
       return await attempt(proxied);
     } catch (e2) {
@@ -74,19 +74,15 @@ function classifyFetchError(err, res) {
 
 /* ------- RESILIENT reasons.json loader & random picker ------- */
 let __reasonsCache = null;
-
 async function loadReasons() {
   if (Array.isArray(__reasonsCache)) return __reasonsCache;
-
   try {
     // Resolve against document base (works if app is in a subfolder)
     const url = new URL('reasons.json', document.baseURI).toString();
     const res = await fetch(url, { cache: 'no-store' });
-
     if (!res.ok) {
       throw new Error(`HTTP ${res.status}`);
     }
-
     // Some static hosts serve JSON as text/plain; handle both.
     const ct = res.headers.get('content-type') ?? '';
     let data;
@@ -96,25 +92,21 @@ async function loadReasons() {
       const txt = await res.text();
       data = JSON.parse(txt);
     }
-
     const arr = Array.isArray(data) ? data : [];
     __reasonsCache = arr
       .map(x => (typeof x === 'string' ? x.trim() : ''))
       .filter(Boolean);
-
   } catch (e) {
     console.warn('Failed to load reasons.json:', e);
     __reasonsCache = [];
   }
   return __reasonsCache;
 }
-
 function pickRandom(arr) {
   if (!arr || !arr.length) return null;
   const idx = Math.floor(Math.random() * arr.length);
   return arr[idx];
 }
-
 /* (Optional) Preload once so the first failure is instant */
 loadReasons().catch(e => console.warn('Preload reasons failed:', e));
 
@@ -127,7 +119,6 @@ async function getMessage() {
       const { detail } = classifyFetchError(null, res);
       throw new Error(detail);
     }
-
     let messageText = '';
     const contentType = res.headers.get('content-type') ?? '';
     if (contentType.includes('application/json')) {
@@ -142,26 +133,22 @@ async function getMessage() {
         messageText = text;
       }
     }
-
     setResultText(messageText?.trim() ?? 'No message returned.');
   } catch (err) {
     console.error(err);
     const { detail } = classifyFetchError(err);
-
     // Try to show a random fallback from reasons.json
     try {
       const reasons = await loadReasons();
       let random = pickRandom(reasons);
-
       // Optional: seed one line if reasons.json is empty/unavailable
       if (!random && (!reasons || reasons.length === 0)) {
         random = "Not today—try again in a bit.";
       }
-
       if (random && random.trim()) {
         setResultText(random.trim());
       } else {
-        setResultText(`My problems more than yours, so please hold up. ${detail}. Please try again.`);
+        setResultText(`Failed to fetch message. ${detail}. Please try again.`);
       }
     } catch (e) {
       setResultText(`Failed to fetch message. ${detail}. Please try again.`);
@@ -195,7 +182,6 @@ async function copyToClipboard() {
     finally { document.body.removeChild(ta); }
   }
 }
-
 btn.addEventListener('click', getMessage);
 copyBtn.addEventListener('click', copyToClipboard);
 
@@ -213,17 +199,14 @@ const laasGenerateBtn = document.getElementById('laasGenerateBtn');
 const laasCopyBtn = document.getElementById('laasCopyBtn');
 const laasResult = document.getElementById('laasResult');
 const laasCategory = document.getElementById('laasCategory');
-
 // (Optional) hero swap if you implemented it
 const heroImage = document.getElementById('heroImage');
 const NAAS_IMG_SRC = 'image.png';
 const NAAS_IMG_ALT = 'Cat meme';
 const LAAS_IMG_SRC = 'laas.jpg';
 const LAAS_IMG_ALT = 'Lies As A Service hero';
-
 function setTitleToNaaS() { if (mainTitle) mainTitle.textContent = 'NaaS - No As A Service'; }
 function setTitleToLaaS() { if (mainTitle) mainTitle.textContent = 'LaaS - Lies As A Service'; }
-
 function showLaaS() {
   if (naasSection) naasSection.hidden = true;
   if (laasSection) laasSection.hidden = false;
@@ -234,7 +217,6 @@ function showLaaS() {
   if (laasResult) laasResult.textContent = 'Choose a category and click to get a reason.';
   if (laasCopyBtn) laasCopyBtn.setAttribute('disabled', 'true');
 }
-
 function showNaaS() {
   if (laasSection) laasSection.hidden = true;
   if (naasSection) naasSection.hidden = false;
@@ -243,10 +225,8 @@ function showNaaS() {
   setTitleToNaaS();
   if (heroImage) { heroImage.src = NAAS_IMG_SRC; heroImage.alt = NAAS_IMG_ALT; }
 }
-
 openLaaSBtn?.addEventListener('click', showLaaS);
 backToNaaSBtn?.addEventListener('click', showNaaS);
-
 function laasSetLoading(isLoading) {
   if (!laasGenerateBtn || !laasResult || !laasCopyBtn) return;
   if (isLoading) {
@@ -261,7 +241,6 @@ function laasSetLoading(isLoading) {
     laasResult.classList.remove('loading');
   }
 }
-
 function laasSetResultText(text) {
   if (!laasResult || !laasCopyBtn) return;
   laasResult.textContent = text;
@@ -295,7 +274,18 @@ async function getLaaSMessage() {
   } catch (err) {
     console.error(err);
     const { detail } = classifyFetchError(err);
-    laasSetResultText(`Failed to fetch message. ${detail}. Please try again.`);
+    try {
+      // NEW: Fallback to local responses (inline JSON, responses.json, or responses.py)
+      const fallbacks = await loadLaaSResponses();
+      const random = pickRandom(fallbacks);
+      if (random && random.trim()) {
+        laasSetResultText(random.trim());
+      } else {
+        laasSetResultText(`Failed to fetch message. ${detail}. Please try again.`);
+      }
+    } catch (e) {
+      laasSetResultText(`Failed to fetch message. ${detail}. Please try again.`);
+    }
   } finally {
     laasSetLoading(false);
   }
@@ -325,10 +315,8 @@ async function laasCopyToClipboard() {
     finally { document.body.removeChild(ta); }
   }
 }
-
 laasGenerateBtn?.addEventListener('click', getLaaSMessage);
 laasCopyBtn?.addEventListener('click', laasCopyToClipboard);
-
 // Initial state
 (function initUI() {
   if (naasFooter) naasFooter.style.display = '';
@@ -338,14 +326,12 @@ laasCopyBtn?.addEventListener('click', laasCopyToClipboard);
     heroImage.alt = NAAS_IMG_ALT;
   }
 })();
-
 /* ========= Deep-linking (load LaaS via URL) ========= */
 // Accept: ?view=laas (optionally &cat=...) OR #laas (optionally #laas:<category>)
 (function initDeepLink() {
   try {
     const params = new URLSearchParams(window.location.search);
     const view = (params.get('view') ?? '').toLowerCase();
-
     // Check hash pattern: #laas or #laas:category
     const hash = (window.location.hash ?? '').replace(/^#/, '');
     let hashView = '';
@@ -355,14 +341,11 @@ laasCopyBtn?.addEventListener('click', laasCopyToClipboard);
       hashView = (hView ?? '').toLowerCase();
       hashCategory = (hCat ?? '').trim();
     }
-
     // Determine desired view
     const wantsLaaS = (view === 'laas') || (hashView === 'laas');
-
     // Optional category from search param or hash
     const catFromQuery = (params.get('cat') ?? '').trim();
     const cat = (hashCategory || catFromQuery || '').toLowerCase();
-
     if (wantsLaaS) {
       // Preselect category if valid
       if (cat && document.getElementById('laasCategory')) {
@@ -378,4 +361,3 @@ laasCopyBtn?.addEventListener('click', laasCopyToClipboard);
     console.warn('Deep-link init failed:', e);
   }
 })();
-
