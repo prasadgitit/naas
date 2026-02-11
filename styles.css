@@ -1,364 +1,189 @@
-/* =========================================================
-   THEME SYSTEM (auto / light / dark via data-theme attribute)
-   ========================================================= */
+/* Reset */
+*,
+*::before,
+*::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+button, input, select { font: inherit; }
+
+/* White theme only */
 :root {
-  --bg: #0f172a;
-  --card: #111827;
-  --accent: #22c55e;
-  --text: #e5e7eb;
-  --muted: #9ca3af;
-  --surface: #0b1220;
-  --border: rgba(255,255,255,0.08);
-  --shadow: 0 10px 30px rgba(0,0,0,0.35);
-
-  --toast-success-bg: rgba(16, 185, 129, 0.12);
-  --toast-success-border: rgba(16, 185, 129, 0.35);
-  --toast-success-text: #d1fae5;
-  --toast-error-bg: rgba(239, 68, 68, 0.12);
-  --toast-error-border: rgba(239, 68, 68, 0.35);
-  --toast-error-text: #fee2e2;
-  --toast-info-bg: rgba(59, 130, 246, 0.12);
-  --toast-info-border: rgba(59, 130, 246, 0.35);
-  --toast-info-text: #dbeafe;
-
-  --btn-secondary-bg: #243043;
-  --btn-secondary-hover: #2b3a52;
-
-  --result-loading-a: rgba(255,255,255,0.06);
-  --result-loading-b: rgba(255,255,255,0.16);
-}
-
-/* Light theme overrides */
-:root[data-theme="light"] {
-  --bg: #f7fafc;
+  --bg: #f8f9fb;
+  --surface: #ffffff;
   --card: #ffffff;
-  --accent: #16a34a;
-  --text: #0f172a;
-  --muted: #475569;
-  --surface: #f1f5f9;
-  --border: rgba(0,0,0,0.08);
-  --shadow: 0 8px 24px rgba(0,0,0,0.1);
+  --text: #1f1f1f;
+  --muted: #666;
+  --primary: #3a74ff;
+  --primary-text: #fff;
+  --border: #e1e5ea;
+  --shadow: 0 8px 28px rgba(0,0,0,0.14);
 
-  --btn-secondary-bg: #e2e8f0;
-  --btn-secondary-hover: #dbe2eb;
-
-  --result-loading-a: rgba(0,0,0,0.05);
-  --result-loading-b: rgba(0,0,0,0.12);
-
-  --toast-success-bg: rgba(16, 185, 129, 0.12);
-  --toast-success-border: rgba(16, 185, 129, 0.35);
-  --toast-success-text: #065f46;
-  --toast-error-bg: rgba(239, 68, 68, 0.12);
-  --toast-error-border: rgba(239, 68, 68, 0.35);
-  --toast-error-text: #7f1d1d;
-  --toast-info-bg: rgba(37, 99, 235, 0.12);
-  --toast-info-border: rgba(37, 99, 235, 0.35);
-  --toast-info-text: #1e3a8a;
+  --ctrl-h: 44px;
+  --radius: 12px;
+  --gap: 22px;
 }
 
-/* Dark theme overrides: keep defaults from :root */
-:root[data-theme="dark"] {}
-
-/* Auto -> system preference when data-theme="auto" */
-@media (prefers-color-scheme: light) {
-  :root[data-theme="auto"] {
-    --bg: #f7fafc;
-    --card: #ffffff;
-    --accent: #16a34a;
-    --text: #0f172a;
-    --muted: #475569;
-    --surface: #f1f5f9;
-    --border: rgba(0,0,0,0.08);
-    --shadow: 0 8px 24px rgba(0,0,0,0.1);
-
-    --btn-secondary-bg: #e2e8f0;
-    --btn-secondary-hover: #dbe2eb;
-
-    --result-loading-a: rgba(0,0,0,0.05);
-    --result-loading-b: rgba(0,0,0,0.12);
-
-    --toast-success-bg: rgba(16, 185, 129, 0.12);
-    --toast-success-border: rgba(16, 185, 129, 0.35);
-    --toast-success-text: #065f46;
-    --toast-error-bg: rgba(239, 68, 68, 0.12);
-    --toast-error-border: rgba(239, 68, 68, 0.35);
-    --toast-error-text: #7f1d1d;
-    --toast-info-bg: rgba(37, 99, 235, 0.12);
-    --toast-info-border: rgba(37, 99, 235, 0.35);
-    --toast-info-text: #1e3a8a;
-  }
-}
-
-/* ==========================
-   Base Layout & Typography
-   ========================== */
-* { box-sizing: border-box; }
-html, body { height: 100%; }
-
+/* Body background */
 body {
-  margin: 0;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  background:
-    radial-gradient(1000px 600px at 20% 10%, color-mix(in oklab, var(--bg) 85%, #1f2937 15%) 0, var(--bg) 45%);
+  background: var(--bg);
   color: var(--text);
-  min-height: 100vh;
-  display: grid;
-  place-items: center;
+  font-family: system-ui, sans-serif;
 }
 
-.container { width: min(720px, 92vw); padding: 2rem; }
-
-h1 {
-  font-weight: 700;
-  letter-spacing: 0.2px;
-  margin: 0.4rem 0 1rem; /* slight top space for balance with hero */
+/* Topbar */
+.topbar {
+  position: sticky;
+  top: 0;
+  background: #ffffffd0;
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+  z-index: 20;
 }
-
-/* ===== Hero image (above H1) – scaled down, no cropping ===== */
-.hero {
-  display: grid;
-  place-items: center;
-  margin-bottom: 0.9rem;
-}
-
-/* IMPORTANT: Keep full image visible, never crop */
-.hero-image {
-  display: block;
-  width: 100%;
-  max-width: 260px;  /* Adjust as preferred (e.g., 420px for bigger) */
-  height: auto;      /* preserve aspect ratio */
-  /* If you also want to cap height, keep contain to avoid crop:
-     max-height: 260px;
-     object-fit: contain; */
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow);
-}
-
-/* Panel */
-.panel {
-  background: linear-gradient(180deg, color-mix(in oklab, var(--card) 96%, #ffffff 4%), var(--card));
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 1.25rem;
-  box-shadow: var(--shadow);
-}
-
-.controls { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
-
-/* ==========================
-   Buttons
-   ========================== */
-.btn {
-  appearance: none;
-  border: 0;
-  border-radius: 10px;
-  background: linear-gradient(90deg, color-mix(in oklab, var(--accent) 92%, #16a34a 8%), var(--accent));
-  color: white;
-  font-weight: 600;
-  padding: 0.75rem 1.1rem;
-  cursor: pointer;
-  transition: transform .08s ease, filter .2s ease, background .2s ease, opacity .2s ease;
-  display: inline-flex;
+.topbar__inner {
+  max-width: 1100px;
+  margin: auto;
+  padding: 14px var(--gap);
+  display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 0.5rem;
 }
-.btn:hover { filter: brightness(1.08); }
-.btn:active { transform: translateY(1px) scale(0.99); }
-.btn:disabled { cursor: not-allowed; filter: grayscale(0.2) brightness(0.9); opacity: 0.8; }
-
-.btn.secondary {
-  background: var(--btn-secondary-bg);
-  color: color-mix(in oklab, var(--text) 82%, #ffffff 18%);
-  border: 1px solid var(--border);
+.brand {
+  display: flex;
+  gap: 10px;
+  font-weight: bold;
 }
-.btn.secondary:hover { filter: none; background: var(--btn-secondary-hover); }
-
-/* Spinner inside primary button */
-.spinner {
-  --size: 16px;
-  width: var(--size); height: var(--size);
-  border: 2px solid color-mix(in oklab, #ffffff 35%, transparent);
-  border-top-color: #ffffff;
+.logo-dot {
+  width: 10px;
+  height: 10px;
+  background: var(--primary);
   border-radius: 50%;
-  display: none;
-  animation: spin .8s linear infinite;
 }
-@keyframes spin { to { transform: rotate(360deg); } }
-.btn.loading .spinner { display: inline-block; }
-.btn.loading .btn-label { opacity: 0.85; }
-
-/* ==========================
-   Result Area
-   ========================== */
-.result {
-  margin-top: 1rem;
-  min-height: 3.25rem;
-  padding: 1rem 1.1rem;
-  border-radius: 10px;
-  background: var(--surface);
-  border: 1px solid color-mix(in oklab, var(--border) 90%, transparent);
-  font-size: 1.05rem;
-  color: var(--text);
-  word-break: break-word;
-  position: relative;
+.nav {
+  display: flex;
+  gap: 20px;
 }
-
-/* Shimmer loading state */
-.result.loading { color: transparent; }
-.result.loading::before {
-  content: "";
-  position: absolute; inset: 0; border-radius: 10px;
-  background: linear-gradient(
-    110deg,
-    var(--result-loading-a) 8%,
-    var(--result-loading-b) 18%,
-    var(--result-loading-a) 33%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 1.2s linear infinite;
+.nav a {
+  color: var(--muted);
+  text-decoration: none;
+  font-weight: 500;
 }
-@keyframes shimmer { to { background-position: -200% 0; } }
+.nav a:hover { color: var(--text); }
 
-.copy-success {
-  background: linear-gradient(90deg, var(--accent), color-mix(in oklab, var(--accent) 70%, #58d27e 30%));
-  border: 1px solid rgba(0,0,0,0.06) !important;
-  color: #052e16 !important;
+/* Layout */
+.container {
+  max-width: 1100px;
+  margin: auto;
+  padding: var(--gap);
+}
+.panel + .panel { margin-top: var(--gap); }
+
+.title {
+  margin: 0 0 6px;
+  font-size: 2rem;
+}
+.subtitle {
+  margin: 0 0 16px;
+  color: var(--muted);
 }
 
-/* ==========================
-   Toast (bottom-center)
-   ========================== */
-.toast {
-  position: fixed; left: 50%; bottom: 24px;
-  transform: translateX(-50%) translateY(20px);
-  min-width: 220px; max-width: min(92vw, 560px);
-  padding: 0.85rem 1rem; border-radius: 12px;
-  background: var(--toast-success-bg);
-  color: var(--toast-success-text);
-  border: 1px solid var(--toast-success-border);
-  backdrop-filter: blur(6px);
+/* Card */
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: var(--gap);
   box-shadow: var(--shadow);
-  font-size: 0.98rem; line-height: 1.25rem; text-align: center;
-  opacity: 0; pointer-events: none; z-index: 9999;
-  transition: transform .25s ease, opacity .25s ease;
-}
-.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-.toast.success { background: var(--toast-success-bg); border-color: var(--toast-success-border); color: var(--toast-success-text); }
-.toast.error { background: var(--toast-error-bg); border-color: var(--toast-error-border); color: var(--toast-error-text); }
-.toast.info { background: var(--toast-info-bg); border-color: var(--toast-info-border); color: var(--toast-info-text); }
-
-/* ==========================
-   Theme Toggle Button (top-right)
-   ========================== */
-.theme-toggle {
-  position: fixed; top: 14px; right: 14px; z-index: 1000;
   border: 1px solid var(--border);
-  background: var(--card); color: var(--text);
-  border-radius: 999px; padding: 0.45rem 0.6rem;
-  display: inline-flex; align-items: center; gap: 0.35rem;
-  cursor: pointer; box-shadow: var(--shadow);
-  transition: transform .08s ease, filter .2s ease, background .2s ease, color .2s ease, opacity .2s ease;
-}
-.theme-toggle:hover { filter: brightness(1.05); }
-.theme-toggle:active { transform: translateY(1px) scale(0.98); }
-.theme-toggle .theme-icon { display: none; }
-/* Show icon based on chosen mode */
-.theme-toggle[data-mode="light"] .sun { display: inline; }
-.theme-toggle[data-mode="dark"] .moon { display: inline; }
-.theme-toggle[data-mode="auto"] .auto { display: inline; }
-
-/* ==========================
-   Footer
-   ========================== */
-.footnote { color: var(--muted); margin-top: 1rem; }
-.footnote a { color: var(--accent); text-decoration: none; }
-.footnote a:hover { text-decoration: underline; }
-
-/* ==========================
-   Accessibility helpers
-   ========================== */
-.visually-hidden {
-  position: absolute !important;
-  width: 1px !important;
-  height: 1px !important;
-  padding: 0 !important;
-  margin: -1px !important;
-  overflow: hidden !important;
-  clip: rect(0 0 0 0) !important;
-  white-space: nowrap !important;
-  border: 0 !important;
 }
 
-/* ==========================
-   LaaS Dropdown (professional look + dark-mode fix)
-   ========================== */
+/* Controls row */
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
 
-/* Base select styling */
-.select {
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
+/* Unified button styling */
+.btn {
+  display: inline-flex;
+  align-items: center;         /* <-- FIXES VERTICAL ALIGNMENT */
+  justify-content: center;     /* <-- PERFECT CENTER */
+  gap: 8px;
 
-  background: var(--surface);
-  color: var(--text);
+  height: var(--ctrl-h);
+  padding: 0 18px;
+
+  border-radius: 8px;
   border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 0.65rem 2.25rem 0.65rem 0.85rem; /* right padding for caret */
-  font: inherit;
-  line-height: 1.2;
   cursor: pointer;
-  transition: background .2s ease, border-color .2s ease, box-shadow .2s ease, transform .06s ease;
-  box-shadow: var(--shadow);
-  position: relative;
 
-  /* Dark-mode readability */
-  color-scheme: light dark;              /* hints system/theming for form controls */
-  -webkit-text-fill-color: var(--text);  /* Safari/WebKit: ensure visible text */
+  font-weight: 600;
+  line-height: 1;
 }
 
-/* Subtle hover lift */
-.select:hover {
-  background: color-mix(in oklab, var(--surface) 94%, #ffffff 6%);
+/* Primary button */
+.btn-primary {
+  background: var(--primary);
+  color: var(--primary-text);
+  border-color: var(--primary);
+}
+.btn-primary:hover { filter: brightness(1.07); }
+
+/* Ghost button */
+.btn-ghost {
+  background: #fff;
+  color: var(--text);
+}
+.btn-ghost:hover {
+  background: #f0f0f0;
 }
 
-/* Focus ring that matches the accent color */
-.select:focus {
-  outline: none;
-  border-color: color-mix(in oklab, var(--accent) 60%, var(--border) 40%);
-  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 24%, transparent);
-}
-
-/* Active press-down feedback */
-.select:active {
-  transform: translateY(1px);
-}
-
-/* Optional: caret icon using CSS backgrounds (no external asset) */
+/* Select */
 .select {
-  background-image:
-    linear-gradient(45deg, transparent 50%, var(--muted) 50%),
-    linear-gradient(135deg, var(--muted) 50%, transparent 50%),
-    linear-gradient(to right, transparent, transparent);
-  background-position:
-    calc(100% - 18px) calc(50% - 3px),
-    calc(100% - 13px) calc(50% - 3px),
-    calc(100% - 2.6rem) 0;
-  background-size: 6px 6px, 6px 6px, 1px 100%;
-  background-repeat: no-repeat;
+  height: var(--ctrl-h);
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--text);
+
+  display: flex;              /* <-- ALIGN TEXT IN CENTER */
+  align-items: center;
+  line-height: 1;
 }
 
-/* Make dropdown options readable when the list opens
-   (native popups are OS-controlled, but this helps most browsers) */
-select.select option {
-  background-color: var(--surface);
-  color: var(--text);
+/* Label */
+.field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.field-label {
+  color: var(--muted);
+  font-weight: 500;
 }
 
-/* High-contrast for hovered/selected option in the popup list */
-select.select option:checked,
-select.select option:focus,
-select.select option:hover {
-  background-color: color-mix(in oklab, var(--accent) 18%, var(--surface) 82%);
-  color: var(--text);
+/* Output */
+.output {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  margin-top: var(--gap);
+}
+.output-text { margin: 0; }
+
+/* Divider */
+.divider {
+  border: 0;
+  height: 1px;
+  background: var(--border);
+  margin: var(--gap) 0;
+}
+
+/* Footer */
+.footer {
+  text-align: center;
+  margin-top: var(--gap);
+  padding: var(--gap);
+  color: var(--muted);
 }
