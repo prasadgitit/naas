@@ -161,7 +161,7 @@ async function getMessage() {
       if (random && random.trim()) {
         setResultText(random.trim());
       } else {
-        setResultText(`Failed to fetch message. ${detail}. Please try again.`);
+        setResultText(`My problems more than yours, so please hold up. ${detail}. Please try again.`);
       }
     } catch (e) {
       setResultText(`Failed to fetch message. ${detail}. Please try again.`);
@@ -378,3 +378,4 @@ laasCopyBtn?.addEventListener('click', laasCopyToClipboard);
     console.warn('Deep-link init failed:', e);
   }
 })();
+
